@@ -1,0 +1,2 @@
+Try2- Já le as 3 aceleraçoes, e so publica para o broker se elas variarem, dados por eventos!!
+Try3- Calibração do Sensor concluida com sucesso
