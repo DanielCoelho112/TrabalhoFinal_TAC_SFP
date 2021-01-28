@@ -70,14 +70,14 @@ void setup()
 Serial.begin(115200);
 Serial.println(); Serial.print("Connecting to ");Serial.println("Cabovisao-00A0");
  WiFi.mode(WIFI_STA);
- //WiFi.begin("ZON-5590", "casacoelho2020");
- WiFi.begin("Cabovisao-00A0", "tcpipemredesmicrosoft");
+ WiFi.begin("ZON-5590", "casacoelho2020");
+ //WiFi.begin("Cabovisao-00A0", "tcpipemredesmicrosoft");
  while (WiFi.status() != WL_CONNECTED) {
  delay(500); Serial.print(".");
  }
 
  // MQTT
- client.setServer("192.168.1.48", 1883); // O Servidor MQTT, Broker, reside no pc “192.168.1.2”
+ client.setServer("192.168.1.5", 1883); // O Servidor MQTT, Broker, reside no pc “192.168.1.2”
  
  client.connect("esp32"); // O ESP regista-se no Broker, com o nome “esp8266”
  Serial.println("Subscribe temperatura: ");
