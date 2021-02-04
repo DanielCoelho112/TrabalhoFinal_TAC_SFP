@@ -5,6 +5,20 @@
 WiFiClient TCP_Client; // Objecto do tipo TCP
 PubSubClient client(TCP_Client); // Objecto do tipo cliente MQTT
 
+
+//All this values were extracted from the mp9250 datasheet
+//url: https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf
+
+
+//PINS:
+// ESP32 TO GY91
+//3V3 TO VIN
+//GND TO GND
+//D21 TO SDA
+//D22 TO SCL
+
+
+
 #define    MPU9250_ADDRESS            0x68
 #define    ACC_FULL_SCALE_2_G        0x00  
 #define    ACC_FULL_SCALE_4_G        0x08
@@ -67,20 +81,24 @@ long int ti;
 // Initializations
 void setup()
 {
+
+  // baudrate of serial 
 Serial.begin(115200);
-Serial.println(); Serial.print("Connecting to ");Serial.println("Cabovisao-00A0");
+Serial.println(); Serial.print("Connecting to ");Serial.println("ZON-5590");
  WiFi.mode(WIFI_STA);
+ 
+ // establishment wifi connection
  WiFi.begin("ZON-5590", "casacoelho2020");
  //WiFi.begin("Cabovisao-00A0", "tcpipemredesmicrosoft");
  while (WiFi.status() != WL_CONNECTED) {
  delay(500); Serial.print(".");
  }
 
- // MQTT
+ // MQTT in Raspberry  (CHECK THIS IP)
  client.setServer("192.168.1.7", 1883); // O Servidor MQTT, Broker, reside no pc “192.168.1.2”
  
  client.connect("esp32"); // O ESP regista-se no Broker, com o nome “esp8266”
- Serial.println("Subscribe temperatura: ");
+ Serial.println("Publishing Accelerations: ");
 
 
   
@@ -88,6 +106,7 @@ Serial.println(); Serial.print("Connecting to ");Serial.println("Cabovisao-00A0"
   Wire.begin();
   
 
+// defining timer
     timer = timerBegin(0, 120, true);                
    timerAttachInterrupt(timer, &onTime, true);    
     
@@ -96,25 +115,18 @@ Serial.println(); Serial.print("Connecting to ");Serial.println("Cabovisao-00A0"
    timerAlarmEnable(timer);
 
   
-  // Set accelerometers low pass filter at 5Hz
+  // Set accelerometers low pass filter at 5Hz, Saw this in a forum 
   I2CwriteByte(MPU9250_ADDRESS,29,0x06);
-  // Set gyroscope low pass filter at 5Hz
-  I2CwriteByte(MPU9250_ADDRESS,26,0x06);
+
  
   
-  // Configure gyroscope range
 
-  // Configure accelerometers range
-  I2CwriteByte(MPU9250_ADDRESS,28,ACC_FULL_SCALE_16_G);
-  // Set by pass mode for the magnetometers
-  I2CwriteByte(MPU9250_ADDRESS,0x37,0x02);
-  
+  // Configure accelerometers range  
+  I2CwriteByte(MPU9250_ADDRESS,28,ACC_FULL_SCALE_16_G); // 16 was chosen for trial and error, it was the most stable
 
-  
+ 
    pinMode(13, OUTPUT);
-
-  
-  
+ 
   // Store initial time
   ti=millis();
 
@@ -156,22 +168,16 @@ void loop(){
   I2Cread(MPU9250_ADDRESS,0x3B,14,Buf);
   
   // Create 16 bits values from 8 bits data
+
+  // Extract the 3 accelerations from the Buf
   
   // Accelerometer
   int16_t ax=-(Buf[0]<<8 | Buf[1]);
   int16_t ay=-(Buf[2]<<8 | Buf[3]);
   int16_t az=Buf[4]<<8 | Buf[5];
 
- 
-  // Display values
-  
-  // Accelerometer
-  //Serial.print (ax,DEC); 
-  //Serial.print ("\t");
-  //Serial.print (ay,DEC);
-  //Serial.print ("\t");
-  //Serial.print (az,DEC);  
-  //Serial.print ("\t");
+
+ // Sending accelerations in MQTT topics
 
   
   String Ac_X;
