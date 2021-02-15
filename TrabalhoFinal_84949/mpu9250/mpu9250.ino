@@ -26,6 +26,25 @@ PubSubClient client(TCP_Client); // Objecto do tipo cliente MQTT
 #define    ACC_FULL_SCALE_16_G       0x18
 
 
+
+
+volatile bool intFlag=false;
+
+volatile int count;
+hw_timer_t * timer = NULL;
+portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+
+
+void IRAM_ATTR onTime() {
+   portENTER_CRITICAL_ISR(&timerMux);
+   count++;
+   portEXIT_CRITICAL_ISR(&timerMux);
+
+   intFlag=true;
+  digitalWrite(13, digitalRead(13) ^ 1);
+}
+
+
 // This function read Nbytes bytes from I2C device at address Address. 
 // Put read bytes starting at register Register in the Data array. 
 void I2Cread(uint8_t Address, uint8_t Register, uint8_t Nbytes, uint8_t* Data)
@@ -85,27 +104,56 @@ Serial.println(); Serial.print("Connecting to ");Serial.println("ZON-5590");
   
   // Arduino initializations
   Wire.begin();
-  //Wire.setClock(clockFrequency)  Default is 100khz, and the maximum of the sensor is also 100khz
+  
+
+// defining timer
+    timer = timerBegin(0, 120, true);                
+   timerAttachInterrupt(timer, &onTime, true);    
+    
+   // Sets an alarm to sound every second
+   timerAlarmWrite(timer, 1000000, true);           
+   timerAlarmEnable(timer);
+
   
   // Set accelerometers low pass filter at 5Hz, Saw this in a forum 
   I2CwriteByte(MPU9250_ADDRESS,29,0x06);
 
+ 
+  
 
   // Configure accelerometers range  
   I2CwriteByte(MPU9250_ADDRESS,28,ACC_FULL_SCALE_16_G); // 16 was chosen for trial and error, it was the most stable
 
  
-
+   pinMode(13, OUTPUT);
  
   // Store initial time
   ti=millis();
 
+
+
 }
+
+
+
+
+
+// Counter
+long int cpt=0;
+
+void callback()
+{ 
+  intFlag=true;
+  digitalWrite(13, digitalRead(13) ^ 1);
+}
+
 
 
 // Main loop, read and display data
 void loop(){
-
+  while (!intFlag);
+  intFlag=false;
+  
   // Display time
   Serial.print (millis()-ti,DEC);
   Serial.print ("\t");
@@ -151,5 +199,5 @@ Serial.print(Ac_Z.c_str());
   
   // End of line
   Serial.println("");
- delay(10);    
+//  delay(100);    
 }
